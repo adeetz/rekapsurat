@@ -1,14 +1,17 @@
 <?php
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Matikan header yang mungkin sudah di set di file lain
+header_remove('Access-Control-Allow-Origin');
+header_remove('Access-Control-Allow-Methods');
+header_remove('Access-Control-Allow-Headers');
 
-// CORS headers
-header("Access-Control-Allow-Origin: *");
+// Set header CORS yang benar
+header("Access-Control-Allow-Origin: https://doc.gamatekno.co.id");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Max-Age: 3600");
 header("Content-Type: application/json; charset=UTF-8");
 
+// Handle preflight request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -35,7 +38,7 @@ try {
         throw new Exception('Username atau password salah');
     }
 
-    // Update updated_at timestamp
+    // Update timestamp
     $updateStmt = $pdo->prepare("UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = ?");
     $updateStmt->execute([$user['id']]);
 

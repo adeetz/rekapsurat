@@ -1,15 +1,18 @@
 import axios from 'axios';
 
-const BASE_URL = '/api';
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://doc.gamatekno.co.id/api'
+  : '/api';
 
-const apiClient = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  },
-  timeout: 10000
-});
+
+  const apiClient = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    withCredentials: false // Penting untuk CORS
+  });
 
 const handleApiError = (error, operation) => {
   if (error.response) {
