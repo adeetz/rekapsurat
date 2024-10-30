@@ -1,9 +1,13 @@
 <?php
-// api/auth.php
-header("Access-Control-Allow-Origin: *");  // Atau domain spesifik
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Content-Type: application/json");
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// CORS headers
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -31,7 +35,7 @@ try {
         throw new Exception('Username atau password salah');
     }
 
-    // Update last login
+    // Update updated_at timestamp
     $updateStmt = $pdo->prepare("UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = ?");
     $updateStmt->execute([$user['id']]);
 
@@ -44,6 +48,13 @@ try {
         'data' => $user
     ]);
 
+} catch (PDOException $e) {
+    error_log("Database error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     http_response_code(401);
     echo json_encode([
