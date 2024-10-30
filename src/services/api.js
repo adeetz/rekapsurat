@@ -11,8 +11,31 @@ const BASE_URL = process.env.NODE_ENV === 'production'
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     },
-    withCredentials: false // Penting untuk CORS
+    withCredentials: false
   });
+
+  apiClient.interceptors.request.use(
+    config => {
+      console.log('Request:', config);
+      return config;
+    },
+    error => {
+      console.error('Request error:', error);
+      return Promise.reject(error);
+    }
+  );
+  
+  // Add response interceptor for debugging
+  apiClient.interceptors.response.use(
+    response => {
+      console.log('Response:', response);
+      return response;
+    },
+    error => {
+      console.error('Response error:', error);
+      return Promise.reject(error);
+    }
+  );
 
 const handleApiError = (error, operation) => {
   if (error.response) {
