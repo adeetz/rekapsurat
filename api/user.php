@@ -117,25 +117,63 @@ try {
             }
             break;
 
-        case 'DELETE':
-            $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-            $uriParts = explode('/', $uri);
-            $id = isset($uriParts[4]) ? (int) $uriParts[4] : null;
-
-            if (!$id) {
-                throw new Exception("ID tidak valid");
-            }
-
-            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-            if ($stmt->execute([$id])) {
-                echo json_encode([
-                    'status' => 'success',
-                    'message' => 'User berhasil dihapus'
-                ]);
-            } else {
-                throw new Exception("Gagal menghapus user");
-            }
-            break;
+            case 'DELETE':
+                // Ambil ID dari query parameter GET
+                $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+                error_log("Delete request for ID: " . $id); // Debug log
+    
+                if (!$id) {
+                    throw new Exception("ID tidak valid");
+                }
+    
+                // Begin transaction
+                $pdo->beginTransaction();
+    
+                try {
+                    // Check if user exists
+                    $checkStmt = $pdo->prepare("SELECT id, role FROM users WHERE id = ?");
+                    $checkStmt->execute([$id]);
+                    $user = $checkStmt->fetch();
+    
+                    if (!$user) {
+                        throw new Exception("User tidak ditemukan");
+                    }
+    
+                    // Check if last admin
+                    if ($user['role'] === 'admin') {
+                        $adminCount = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn();
+                        if ($adminCount <= 1) {
+                            throw new Exception("Tidak dapat menghapus admin terakhir");
+                        }
+                    }
+    
+                    // Delete user
+                    $deleteStmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                    $success = $deleteStmt->execute([$id]);
+    
+                    if (!$success) {
+                        throw new Exception("Gagal menghapus user");
+                    }
+    
+                    // Check if deletion was successful
+                    if ($deleteStmt->rowCount() === 0) {
+                        throw new Exception("User tidak berhasil dihapus");
+                    }
+    
+                    // Commit transaction
+                    $pdo->commit();
+                    
+                    echo json_encode([
+                        'status' => 'success',
+                        'message' => 'User berhasil dihapus'
+                    ]);
+    
+                } catch (Exception $e) {
+                    // Rollback jika terjadi error
+                    $pdo->rollBack();
+                    throw $e;
+                }
+                break;
             
         default:
             throw new Exception("Method tidak diizinkan");
