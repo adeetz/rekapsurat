@@ -14,7 +14,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if already logged in
   useEffect(() => {
     const user = localStorage.getItem('user');
     if (user) {
@@ -28,42 +27,47 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost/rekapsurat/api/auth.php', 
+      // Gunakan relative URL untuk proxy Vite
+      const response = await axios.post('/api/auth.php', 
         formData,
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          withCredentials: true
         }
       );
 
-      console.log('Login response:', response.data); // Debug log
-
       if (response.data.status === 'success') {
-        // Simpan data user
         localStorage.setItem('user', JSON.stringify(response.data.data));
         localStorage.setItem('isAuthenticated', 'true');
-        
-        // Tampilkan toast success
         toast.success('Login berhasil!');
         
-        // Redirect ke dashboard
         setTimeout(() => {
           navigate('/dashboard', { replace: true });
-        }, 1000); // Tunggu 1 detik untuk menampilkan toast
+        }, 1000);
       } else {
         setError(response.data.message || 'Username atau password salah!');
         toast.error(response.data.message || 'Username atau password salah!');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.response?.data?.message || 'Gagal melakukan login!');
-      toast.error(error.response?.data?.message || 'Gagal melakukan login!');
+      const errorMessage = error.response?.data?.message || 'Gagal melakukan login!';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
@@ -77,8 +81,8 @@ export default function Login() {
             <input
               type="text"
               id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={formData.username}
+              onChange={handleChange}
               disabled={isLoading}
               className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               required
@@ -91,10 +95,10 @@ export default function Login() {
               Password
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               disabled={isLoading}
               className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               required
